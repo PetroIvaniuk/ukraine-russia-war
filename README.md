@@ -4,7 +4,7 @@ Dedicated to the Armed Forces of Ukraine!
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/petroivaniuk/ukraine-russia-war/main/russia_losses.py)
 
-The application is simple dashbord that describes russian Equipment Losses during the 2022 russian invasion of Ukraine.
+The application is a simple dashboard that describes russian Equipment Losses during the 2022 russian invasion of Ukraine.
 The data includes official information from [Armed Forces of Ukraine](https://www.zsu.gov.ua/en) 
 and [Ministry of Defence of Ukraine](https://www.mil.gov.ua/en/). The data will be updated daily till Ukraine win.
 
