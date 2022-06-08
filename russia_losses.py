@@ -63,11 +63,12 @@ with st.container():
     with col0022:
         st.markdown(' ⬆ last week losses ')
 
+with st.container():
     _, col003, _ = st.columns((1.5, 1, 1.5))
     with col003:
         st.markdown('### Losses by the Equipment Type')
 
-    _, col004, _ = st.columns((0.5, 2, 0.5))
+    _, col004, _ = st.columns((1, 2, 1))
     with col004:
         selected_equipment = st.selectbox(
             label='Select an Equipment:', 
@@ -75,43 +76,43 @@ with st.container():
             index=6
         )
 
-    _, col005, _ = st.columns((0.3, 2, 0.3))
-    with col005:
-        fig = make_subplots(2, 1, subplot_titles=("Daily Losses", "Total Losses"))
-        fig.add_trace(go.Bar(
-            x=df_daily['date'],
-            y=df_daily[selected_equipment],
-            text=df_daily[selected_equipment]
-            ), row=1, col=1)
-        fig.add_trace(go.Scatter(x=df['date'], y=df[selected_equipment], mode='lines+markers'), row=2, col=1)
+    # _, col005, _ = st.columns((0.25, 2, 0.25))
+    # with col005:
+    fig = make_subplots(2, 1, subplot_titles=("Daily Losses", "Total Losses"))
+    fig.add_trace(go.Bar(
+        x=df_daily['date'],
+        y=df_daily[selected_equipment],
+        text=df_daily[selected_equipment]
+        ), row=1, col=1)
+    fig.add_trace(go.Scatter(x=df['date'], y=df[selected_equipment], mode='lines+markers'), row=2, col=1)
 
-        fig.update_layout(
-            xaxis=dict(
-                range=[date_last - relativedelta(months=+2), date_last],
-                rangeselector=dict(
-                    buttons=list([
-                        dict(count=1, label="last month", step="month", stepmode="backward"),
-                        dict(count=2, label="last 2 months", step="month", stepmode="backward"),
-                        dict(count=3, label="last 3 months", step="month", stepmode="backward"),
-                        dict(label="all time", step="all")
-                        ])
-                ),
-                type="date",
+    fig.update_layout(
+        xaxis=dict(
+            range=[date_last - relativedelta(months=+2), date_last],
+            rangeselector=dict(
+                buttons=list([
+                    dict(count=1, label="last month", step="month", stepmode="backward"),
+                    dict(count=2, label="last 2 months", step="month", stepmode="backward"),
+                    dict(count=3, label="last 3 months", step="month", stepmode="backward"),
+                    dict(label="all time", step="all")
+                    ])
             ),
-            xaxis2=dict(
-                rangeslider=dict(visible=True, thickness=0.05),
-                type="date",
-            ),
-        )
+            type="date",
+        ),
+        xaxis2=dict(
+            rangeslider=dict(visible=True, thickness=0.05),
+            type="date",
+        ),
+    )
 
-        fig.update_layout(
-            height=800,
-            showlegend=False,
-        )
+    fig.update_layout(
+        height=800,
+        showlegend=False,
+    )
 
-        fig.update_xaxes(matches='x')
+    fig.update_xaxes(matches='x')
 
-        st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
 
 
     _, col006, _ = st.columns((2.25, 1, 2.25))
@@ -124,7 +125,7 @@ with st.container():
             """
             Dedicated to the Armed Forces of Ukraine!
 
-            The application is simple dashbord that describes russian Equipment Losses during the 2022 russian invasion of Ukraine.
+            The application is a simple dashboard that describes russian Equipment Losses during the 2022 russian invasion of Ukraine.
             The data includes official information from [Armed Forces of Ukraine](https://www.zsu.gov.ua/en) 
             and [Ministry of Defence of Ukraine](https://www.mil.gov.ua/en/). The data will be updated daily till Ukraine win.
 
