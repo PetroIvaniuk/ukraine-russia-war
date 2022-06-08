@@ -8,13 +8,19 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 
 
-url = 'https://raw.githubusercontent.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset/main/data/russia_losses_equipment.json'
-response = requests.get(url)
-df = pd.DataFrame(response.json())
+url1 = 'https://raw.githubusercontent.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset/main/data/russia_losses_equipment.json'
+url2 = 'https://raw.githubusercontent.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset/main/data/russia_losses_personnel.json'
+
+response1 = requests.get(url1)
+response2 = requests.get(url2)
+
+df_personnel = pd.DataFrame(response2.json())
+total_losses_personnel = df_personnel.iloc[-1]['personnel']
 
 columns_sum = ['military auto', 'fuel tank', 'vehicles and fuel tanks']
 columns_drop = columns_sum + ['mobile SRBM system', 'greatest losses direction']
 
+df = pd.DataFrame(response1.json())
 df['date'] = pd.to_datetime(df['date'])
 df['vehicle and fuel tank'] = df[columns_sum].sum(axis=1).astype(int)
 df = df.drop(columns_drop, axis=1)
@@ -24,7 +30,7 @@ df_daily = df_daily.diff().fillna(df_daily).fillna(0).astype(int).reset_index()
 
 df_sum = df_daily.sum()
 df_sum_last_7_days = df_daily.tail(7).sum()
-losses_total = df_sum.sum()
+total_losses = df_sum.sum()
 date_last = df_daily.iloc[-1]['date'].date()
 day_last = df_daily.iloc[-1]['day']
 columns = df_daily.columns[2:]
@@ -37,12 +43,12 @@ with st.container():
         st.title('russian Equipment Losses')
 
     _, col0020, _ = st.columns((5, 1, 5))
-    _, col0021, _ = st.columns((1.5, 1, 1.5))
+    _, col0021, _ = st.columns((1.25, 2, 1.25))
 
     with col0020:
         st.markdown('### Day {}'.format(day_last))
     with col0021:
-        st.markdown('### Total Equipment Losses: {}'.format(losses_total))
+        st.markdown('### Total Equipment Losses: {}, The Death Toll: {}'.format(total_losses, total_losses_personnel))
 
     _, col101, col102, col103, col104, col105, col106, _ = st.columns((1.25, 1, 1, 1, 1, 1, 1, 1.25))
     _, col107, col108, col109, col110, col111, col112, _ = st.columns((1.25, 1, 1, 1, 1, 1, 1, 1.25))
@@ -66,13 +72,17 @@ with st.container():
         selected_equipment = st.selectbox(
             label='Select an Equipment:', 
             options=columns, 
-            index=0
+            index=6
         )
 
     _, col005, _ = st.columns((0.3, 2, 0.3))
     with col005:
         fig = make_subplots(2, 1, subplot_titles=("Daily Losses", "Total Losses"))
-        fig.add_trace(go.Bar(x=df_daily['date'], y=df_daily[selected_equipment]), row=1, col=1)
+        fig.add_trace(go.Bar(
+            x=df_daily['date'],
+            y=df_daily[selected_equipment],
+            text=df_daily[selected_equipment]
+            ), row=1, col=1)
         fig.add_trace(go.Scatter(x=df['date'], y=df[selected_equipment], mode='lines+markers'), row=2, col=1)
 
         fig.update_layout(
