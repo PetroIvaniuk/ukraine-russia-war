@@ -7,6 +7,7 @@ from plotly.subplots import make_subplots
 from datetime import date
 from dateutil.relativedelta import relativedelta
 
+period_last = 7
 
 url1 = 'https://raw.githubusercontent.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset/main/data/russia_losses_equipment.json'
 url2 = 'https://raw.githubusercontent.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset/main/data/russia_losses_personnel.json'
@@ -15,7 +16,11 @@ response1 = requests.get(url1)
 response2 = requests.get(url2)
 
 df_personnel = pd.DataFrame(response2.json())
+df_personnel_daily = df_personnel[['date', 'personnel']].copy().set_index('date')
+df_personnel_daily = df_personnel_daily.diff().fillna(df_personnel_daily).fillna(0).astype(int).reset_index()
+
 total_losses_personnel = df_personnel.iloc[-1]['personnel']
+total_losses_personnel_period = df_personnel_daily.tail(period_last).sum()['personnel']
 
 columns_sum = ['military auto', 'fuel tank', 'vehicles and fuel tanks']
 columns_drop = columns_sum + ['mobile SRBM system', 'greatest losses direction']
@@ -28,27 +33,32 @@ df = df.drop(columns_drop, axis=1)
 df_daily = df.copy().set_index(['date', 'day'])
 df_daily = df_daily.diff().fillna(df_daily).fillna(0).astype(int).reset_index()
 
-df_sum = df_daily.sum()
-df_sum_last_7_days = df_daily.tail(7).sum()
+df_sum = df_daily.loc[:, df_daily.columns!='day'].sum()
+df_sum_period = df_daily.loc[:, df_daily.columns!='day'].tail(period_last).sum()
 total_losses = df_sum.sum()
+total_losses_peroid = df_sum_period.sum()
+
 date_last = df_daily.iloc[-1]['date'].date()
 day_last = df_daily.iloc[-1]['day']
-columns = df_daily.columns[2:]
+columns_data = df_daily.loc[:, ~df_daily.columns.isin(['date', 'day'])].columns
 
 st.set_page_config(page_title='War-Losses', page_icon="🇺🇦", layout="wide")
 
 with st.container():
-    _, col001, _ = st.columns((1.75, 2, 1.75))
+    _, col001, _ = st.columns((1.8, 1.9, 1.8))
     with col001:
         st.title('russian Equipment Losses')
 
-    _, col0020, _ = st.columns((5, 1, 5))
-    _, col0021, _ = st.columns((1.25, 2, 1.25))
+    _, col0020, _ = st.columns((3.75, 1, 3.75))
+    _, col0021, _ = st.columns((1.45, 1, 1.45))
+    _, col0022, _ = st.columns((1.95, 1, 1.95))
 
     with col0020:
-        st.markdown('### Day {}'.format(day_last))
+        st.markdown('#### {} Day of War'.format(day_last))
     with col0021:
-        st.markdown('### Total Equipment Losses: {}, The Death Toll: {}'.format(total_losses, total_losses_personnel))
+        st.markdown('#### Total Equipment Losses: {} ⬆{}'.format(total_losses, total_losses_peroid))
+    with col0022:
+        st.markdown('#### The Death Toll: {} ⬆{}'.format(total_losses_personnel, total_losses_personnel_period))
 
     _, col101, col102, col103, col104, col105, col106, _ = st.columns((1.25, 1, 1, 1, 1, 1, 1, 1.25))
     _, col107, col108, col109, col110, col111, col112, _ = st.columns((1.25, 1, 1, 1, 1, 1, 1, 1.25))
@@ -57,11 +67,19 @@ with st.container():
                     col107, col108, col109, col110, col111, col112,]
 
     for i, col in enumerate(columns_lsit):
-        col.metric(columns[i], int(df_sum[columns[i]]), int(df_sum_last_7_days[columns[i]]))
+        col.metric(
+            columns_data[i],
+            int(df_sum[columns_data[i]]),
+            int(df_sum_period[columns_data[i]]
+                ))
     
-    _, col0022, _ = st.columns((5, 1, 5))
+    _, col0022, _ = st.columns((4, 1, 4))
     with col0022:
-        st.markdown(' ⬆ last week losses ')
+        st.markdown('⬆ last week losses')
+
+    _, col0023, _ = st.columns((3, 1, 3))
+    with col0023:
+        st.markdown(' Data updated on {}'.format(date_last))
 
 with st.container():
     _, col003, _ = st.columns((1.5, 1, 1.5))
@@ -72,7 +90,7 @@ with st.container():
     with col004:
         selected_equipment = st.selectbox(
             label='Select an Equipment:', 
-            options=columns, 
+            options=columns_data,
             index=6
         )
 
