@@ -50,7 +50,7 @@ with st.container():
         st.title('russian Equipment Losses')
 
     _, col0020, _ = st.columns((3.75, 1, 3.75))
-    _, col0021, _ = st.columns((1.45, 1, 1.45))
+    _, col0021, _ = st.columns((1.35, 1, 1.35))
     _, col0022, _ = st.columns((1.95, 1, 1.95))
 
     with col0020:
