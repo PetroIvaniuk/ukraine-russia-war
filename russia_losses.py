@@ -11,14 +11,32 @@ from plotly.subplots import make_subplots
 
 
 def preprocess_dataframe_equipment(url):
+    '''
+    Preprocess equipment losses dataset
+    '''
     columns_to_sum = ['military auto', 'fuel tank', 'vehicles and fuel tanks']
     columns_to_drop = columns_to_sum + ['mobile SRBM system', 'greatest losses direction']
+    columns_to_rename = {
+        'aircraft': 'Aircrafts',
+        'helicopter': 'Helicopters',
+        'tank': 'Tanks',
+        'APC': 'Armoured Personnel Carriers',
+        'field artillery': 'Artillery Systems',
+        'MRL': 'Multiple Rocket Launchers',
+        'drone': 'Unmanned Aerial Vehicles',
+        'naval ship': 'Warships, Boats',
+        'anti-aircraft warfare': 'Anti-aircraft Warfare Systems',
+        'special equipment': 'Special Equipment',
+        'cruise missiles': 'Cruise Missiles',
+        'vehicle and fuel tank': 'Vehicle and Fuel Tank',
+    }
 
     df = pd.DataFrame(requests.get(url).json())
     df['date'] = pd.to_datetime(df['date'])
     df['day'] = df['day'].astype(int)
     df['vehicle and fuel tank'] = df[columns_to_sum].sum(axis=1).astype(int)
     df = df.drop(columns_to_drop, axis=1)
+    df = df.rename(columns=columns_to_rename)
     return df
 
 def create_dataframe_heatmap(df, columns_list):
@@ -57,7 +75,7 @@ def plot_heat_map(values_input, values_heat_map, x_label, y_label):
         hoverinfo='text'
         )
     fig.update_layout(
-        title_text='<b>Weekly losses</b>',
+        title_text='<b>Weekly Losses</b>',
         title_x=0.5,
         )
     st.plotly_chart(fig, use_container_width=True)
@@ -153,8 +171,8 @@ with st.container():
     with col0022:
         st.markdown('#### The Death Toll: {} ⬆{}'.format(total_losses_personnel, total_losses_personnel_period))
 
-    _, col101, col102, col103, col104, col105, col106, _ = st.columns((1.25, 1, 1, 1, 1, 1, 1, 1.25))
-    _, col107, col108, col109, col110, col111, col112, _ = st.columns((1.25, 1, 1, 1, 1, 1, 1, 1.25))
+    _, col101, col102, col103, col104, col105, col106, _ = st.columns((1, 1, 1, 1, 1, 1, 1, 1))
+    _, col107, col108, col109, col110, col111, col112, _ = st.columns((1, 1, 1, 1, 1, 1, 1, 1))
 
     columns_metric = [col101, col102, col103, col104, col105, col106, 
                       col107, col108, col109, col110, col111, col112,]
@@ -215,7 +233,7 @@ with st.container():
             The data includes official information from [Armed Forces of Ukraine](https://www.zsu.gov.ua/en) 
             and [Ministry of Defence of Ukraine](https://www.mil.gov.ua/en/). The data will be updated daily till Ukraine win.
 
-            **Acronyms**
+            **Possible Acronyms**
             - MRL - Multiple Rocket Launcher,
             - APC - Armored Personnel Carrier,
             - SRBM - Short-range ballistic missile,
