@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
+import plotly.express as px
 from plotly.subplots import make_subplots
 
 
@@ -39,6 +40,25 @@ def preprocess_dataframe_equipment(url):
     df = df.rename(columns=columns_to_rename)
     return df
 
+def create_dataframe_direction(url):
+    '''
+    Creats direction dataset
+    '''
+    direction_rename = {
+        'Slobozhanskyi':'Kharkiv'
+        }
+    df = pd.DataFrame(requests.get(url).json())
+    df['direction'] = df['greatest losses direction'].str.split(',|and')
+    df_direction = df['direction'].explode().str.strip().replace(direction_rename)\
+                                  .value_counts(ascending=True).reset_index()\
+                                  .rename(columns={
+                                    'index':'direction',
+                                    'direction':'occurrence'
+                                    })
+    df_direction['direction'] = df_direction['direction'] + '   '
+    df_direction['text_hover'] = df_direction['occurrence'].astype(str) + ' days'
+    return df_direction
+
 def create_dataframe_heatmap(df, columns_list):
     '''
     Converts input dataset into dataset ready to use for heatmap chart
@@ -60,6 +80,51 @@ def create_dataframe_heatmap(df, columns_list):
     y_labels_list = list(df_output.index)
 
     return df_output, x_labels_list, y_labels_list
+
+def plot_bar(df):
+    '''
+    Plot bar chart
+    '''
+    fig = px.bar(
+        df,
+        y='direction',
+        x='occurrence',
+        hover_name='text_hover',
+        text_auto=True,
+    )
+    annotation_list = [
+        dict(font=dict(size=14),
+             x=0.01,
+             y=1.04,
+             showarrow=False,
+             text="NUMBER OF DAYS OF GREATEST LOSSES",
+             textangle=0,
+             xanchor='left',
+             yref="paper",
+             xref="paper"),
+         dict(font=dict(size=14),
+             x=0,
+             y=1.04,
+             showarrow=False,
+             text="DIRECTION",
+             textangle=0,
+             xanchor='right',
+             yref="paper",
+             xref="paper")
+    ]
+    fig.update_layout(
+        height=800,
+        plot_bgcolor='rgba(0, 0, 0, 0)',
+        paper_bgcolor='rgba(0, 0, 0, 0)',
+        xaxis_showticklabels=False,
+        xaxis_visible=False,
+        yaxis_title=None,
+        title_text='<b>Directions with greatest losses of russian personnel, since 2022-04-25</b>',
+        title_x=0.5,
+        font_size=16,
+        annotations=annotation_list,
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
 def plot_heat_map(values_input, values_heat_map, x_label, y_label):
     '''
@@ -142,6 +207,8 @@ df_equipment = preprocess_dataframe_equipment(url1)
 df_equipment_daily = df_equipment.copy().set_index(['date', 'day'])
 df_equipment_daily = df_equipment_daily.diff().fillna(df_equipment_daily).fillna(0).astype(int).reset_index()
 
+df_direction = create_dataframe_direction(url1)
+
 df_sum = df_equipment_daily.loc[:, df_equipment_daily.columns!='day'].sum()
 df_sum_period = df_equipment_daily.loc[:, df_equipment_daily.columns!='day'].tail(period_last).sum()
 total_losses = df_sum.sum()
@@ -207,7 +274,7 @@ with st.container():
             index=6
             )
 
-    # plot bar and line chharts
+    # plot bar and line charts
     plot_bar_line_plot(df_equipment, df_equipment_daily, columns_equipment_list, index_selected_equipment, date_last)
 
     # plot heatmap
@@ -217,9 +284,15 @@ with st.container():
     values_input[index_selected_equipment]=values_heat_map[index_selected_equipment]
     plot_heat_map(values_input, values_heat_map, x_labels_list, y_labels_list)
 
+    # plot bar chart
+    _, col005, _ = st.columns((1, 2, 1))
+    with col005:
+        plot_bar(df_direction)
+
+
 # sources and about part
 with st.container():
-    _, col006, _ = st.columns((2.25, 1, 2.25))
+    _, col006, _ = st.columns((2.5, 1, 2.5))
     with col006:
         st.markdown('### Sources & About')
 
@@ -230,25 +303,45 @@ with st.container():
             Dedicated to the Armed Forces of Ukraine!
 
             The application is a simple dashboard that describes russian Equipment Losses during the 2022 russian invasion of Ukraine.
-            The data includes official information from [Armed Forces of Ukraine](https://www.zsu.gov.ua/en) 
-            and [Ministry of Defence of Ukraine](https://www.mil.gov.ua/en/). The data will be updated daily till Ukraine win.
+            The data includes official information from [Armed Forces of Ukraine](https://www.zsu.gov.ua/en) and
+            [Ministry of Defence of Ukraine](https://www.mil.gov.ua/en/). The data will be updated daily till Ukraine win.
+
+            **Tracking**
+            - Aircrafts
+            - Helicopters
+            - Tanks
+            - Armoured Personnel Carriers
+            - Artillery Systems
+            - Multiple Rocket Launchers
+            - Unmanned Aerial Vehicles
+            - Warships, Boats
+            - Anti-aircraft Warfare Systems
+            - Special Equipment
+            - Cruise Missiles
+            - Vehicle and Fuel Tank
 
             **Possible Acronyms**
-            - MRL - Multiple Rocket Launcher,
-            - APC - Armored Personnel Carrier,
-            - SRBM - Short-range ballistic missile,
-            - POW - Prisoner of War,
-            - drones: 
-              - UAV - Unmanned Aerial Vehicle, 
-              - RPA - Remotely Piloted Vehicle.
+            - MRL - Multiple Rocket Launcher
+            - APC - Armored Personnel Carrier
+            - SRBM - Short-range Ballistic Missile
+            - POW - Prisoner of War
+            - UAV - Unmanned Aerial Vehicle
+            - RPA - Remotely Piloted Vehicle
 
             **Data Sources**
-            - [2022 Ukraine Russia War Dataset](https://github.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset) - JSON format on GitHub [![GitHub Repo stars](https://img.shields.io/github/stars/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset?style=social)](https://github.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset)
-            - [2022 Ukraine Russia War Dataset](https://doi.org/10.34740/KAGGLE/DS/1967621) - CSV format on Kaggle.
-            - [2022 Ukraine Russia War Equipment Losses Oryx Dataset](https://www.kaggle.com/datasets/piterfm/2022-ukraine-russia-war-equipment-losses-oryx) - Ukraine and russia Equipment Losses based on Oryx data.
+            - [2022 Ukraine Russia War Dataset](https://github.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset) -
+                russia Losses, JSON format on GitHub.
+                [![GitHub Repo stars](https://img.shields.io/github/stars/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset?style=social)](https://github.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset)
+            - [2022 Ukraine Russia War Dataset](https://doi.org/10.34740/KAGGLE/DS/1967621) - russia Losses, CSV format on Kaggle.
+
+            **Data Sources (Additional)**
+            - [2022 Ukraine Russia War, Losses, Oryx + Images](https://www.kaggle.com/datasets/piterfm/2022-ukraine-russia-war-equipment-losses-oryx) -
+                Ukraine and russia Equipment Losses based on Oryx data. The dataset includes images of all losses.
+            - [rassian navi dataset](https://www.kaggle.com/datasets/piterfm/russian-navy) -
+                All Surface Combatants, Submarines, Littoral Warfare Ships, Rescue, and Auxiliary Ships. The dataset includes all warship losses.
             
             **Contacts**
-
+            
             [![GitHub followers](https://img.shields.io/github/followers/PetroIvaniuk?style=social)](https://github.com/PetroIvaniuk)
             [![](https://img.shields.io/badge/Linkedin-Connect-informational)](https://www.linkedin.com/in/petro-ivaniuk-68a89432/)
             [![Twitter Follow](https://img.shields.io/twitter/follow/PetroIvanyuk?style=social)](https://twitter.com/PetroIvanyuk)
