@@ -11,7 +11,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 
 
-def preprocess_dataframe_equipment(url):
+def preprocess_dataframe_equipment(df):
     '''
     Preprocess equipment losses dataset
     '''
@@ -31,33 +31,60 @@ def preprocess_dataframe_equipment(url):
         'cruise missiles': 'Cruise Missiles',
         'vehicle and fuel tank': 'Vehicle and Fuel Tank',
     }
-
-    df = pd.DataFrame(requests.get(url).json())
+    df = df.copy()
     df['date'] = pd.to_datetime(df['date'])
-    df['day'] = df['day'].astype(int)
     df['vehicle and fuel tank'] = df[columns_to_sum].sum(axis=1).astype(int)
     df = df.drop(columns_to_drop, axis=1)
     df = df.rename(columns=columns_to_rename)
     return df
 
-def create_dataframe_direction(url):
+def create_dataframe_direction_bar(df, direction_rename_dict):
     '''
-    Creats direction dataset
+    Creats direction dataset for bar chart
     '''
-    direction_rename = {
-        'Slobozhanskyi':'Kharkiv'
-        }
-    df = pd.DataFrame(requests.get(url).json())
+    map_direction_oblast = {
+        'Popasna':'Luhansk',
+        'Slobozhanskyi':'Kharkiv',
+        'Kharkiv':'Kharkiv',
+        'Mykolaiv':'Mykolaiv',
+        'Lyman':'Donetsk',
+        'Novopavlivsk':'Kharkiv',
+        'Donetsk':'Donetsk',
+        'Sievierodonetsk':'Luhansk',
+        'Kryvyi Rih':'Dnipropetrovsk',
+        'Izyum':'Kharkiv',
+        'Kurakhove':'Donetsk',
+        'Zaporizhzhia':'Zaporizhzhia',
+        'Kramatorsk':'Donetsk',
+        'Avdiivka':'Donetsk',
+        'Sloviansk':'Donetsk',
+        'Bakhmut':'Donetsk',
+    }
+    df = df.copy()
     df['direction'] = df['greatest losses direction'].str.split(',|and')
-    df_direction = df['direction'].explode().str.strip().replace(direction_rename)\
+    df_direction = df['direction'].explode().str.strip().replace(direction_rename_dict)\
                                   .value_counts(ascending=True).reset_index()\
                                   .rename(columns={
                                     'index':'direction',
                                     'direction':'occurrence'
                                     })
+    df_direction['oblast'] = df_direction['direction'].replace(map_direction_oblast)
     df_direction['direction'] = df_direction['direction'] + '   '
     df_direction['text_hover'] = df_direction['occurrence'].astype(str) + ' days'
     return df_direction
+
+def create_dataframe_direction_heatmap(df, direction_rename_dict):
+    '''
+    Creats direction dataset for heatmap chart
+    '''
+    df = df.copy()
+    df['direction'] = df['greatest losses direction'].str.split(',|and')
+    df_direction = df[df['direction'].notna()][['date', 'direction']].set_index('date')['direction'].explode()\
+                                                                     .reset_index()
+    df_direction['direction'] = df_direction['direction'].str.strip().replace(direction_rename_dict)
+    df_direction['value'] = 1
+    df_pivot = df_direction.pivot(index='date', columns='direction', values='value').T.copy()
+    return df_pivot
 
 def create_dataframe_heatmap(df, columns_list):
     '''
@@ -89,6 +116,8 @@ def plot_bar(df):
         df,
         y='direction',
         x='occurrence',
+        color='oblast',
+        color_discrete_sequence=px.colors.qualitative.Prism,
         hover_name='text_hover',
         text_auto=True,
     )
@@ -119,16 +148,48 @@ def plot_bar(df):
         xaxis_showticklabels=False,
         xaxis_visible=False,
         yaxis_title=None,
-        title_text='<b>Directions with greatest losses of russian personnel, since 2022-04-25</b>',
+        title_text='<b>Directions of personnel losses</b>',
         title_x=0.5,
         font_size=16,
         annotations=annotation_list,
     )
     st.plotly_chart(fig, use_container_width=True)
 
-def plot_heat_map(values_input, values_heat_map, x_label, y_label):
+def plot_heatmap_direction(df, date_last):
     '''
-    Plot heatmap chart
+    Plot heatmap chart of directions with greatest personnel losses
+    '''
+    ticks_number = df.columns.shape[0]//2
+    fig = px.imshow(df, color_continuous_scale=["blue", "green"])
+    fig.update_layout(
+        height=600,
+        plot_bgcolor='rgba(0, 0, 0, 0)',
+        paper_bgcolor='rgba(0, 0, 0, 0)',
+        yaxis_title=None,
+        xaxis_title=None,
+        coloraxis_showscale=False,
+        xaxis_nticks=ticks_number,
+        title_text='<b>Timeline of personnel losses</b>',
+        title_x=0.5,
+        font_size=16,
+    )
+    fig.update_layout(
+        xaxis=dict(
+            range=[date_last - relativedelta(months=+3), date_last],
+            rangeselector=dict(
+                buttons=list([
+                    dict(count=3, label="last 3 months", step="month", stepmode="backward"),
+                    dict(label="all time", step="all")
+                    ])
+            ),
+            type="date",
+        ),
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+def plot_heatmap_losses(values_input, values_heat_map, x_label, y_label):
+    '''
+    Plot heatmap chart of equipment losses
     '''
     fig = ff.create_annotated_heatmap(
         values_input[::-1],
@@ -196,6 +257,10 @@ period_last = 7
 url1 = 'https://raw.githubusercontent.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset/main/data/russia_losses_equipment.json'
 url2 = 'https://raw.githubusercontent.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset/main/data/russia_losses_personnel.json'
 
+direction_rename_dict = {
+    'Slobozhanskyi':'Kharkiv'
+    }
+
 df_personnel = pd.DataFrame(requests.get(url2).json())
 df_personnel_daily = df_personnel[['date', 'personnel']].copy().set_index('date')
 df_personnel_daily = df_personnel_daily.diff().fillna(df_personnel_daily).fillna(0).astype(int).reset_index()
@@ -203,11 +268,15 @@ df_personnel_daily = df_personnel_daily.diff().fillna(df_personnel_daily).fillna
 total_losses_personnel = df_personnel.iloc[-1]['personnel']
 total_losses_personnel_period = df_personnel_daily.tail(period_last).sum()['personnel']
 
-df_equipment = preprocess_dataframe_equipment(url1)
+df = pd.DataFrame(requests.get(url1).json())
+df['day'] = df['day'].astype(int)
+
+df_equipment = preprocess_dataframe_equipment(df)
 df_equipment_daily = df_equipment.copy().set_index(['date', 'day'])
 df_equipment_daily = df_equipment_daily.diff().fillna(df_equipment_daily).fillna(0).astype(int).reset_index()
 
-df_direction = create_dataframe_direction(url1)
+df_direction_bar = create_dataframe_direction_bar(df, direction_rename_dict)
+df_direction_heatmap = create_dataframe_direction_heatmap(df, direction_rename_dict)
 
 df_sum = df_equipment_daily.loc[:, df_equipment_daily.columns!='day'].sum()
 df_sum_period = df_equipment_daily.loc[:, df_equipment_daily.columns!='day'].tail(period_last).sum()
@@ -277,27 +346,33 @@ with st.container():
     # plot bar and line charts
     plot_bar_line_plot(df_equipment, df_equipment_daily, columns_equipment_list, index_selected_equipment, date_last)
 
-    # plot heatmap
+    # plot heatmap of equipment losses
     df_heat_map, x_labels_list, y_labels_list = create_dataframe_heatmap(df_equipment_daily, columns_equipment_list)
     values_heat_map = df_heat_map.values
     values_input = np.zeros(values_heat_map.shape)
     values_input[index_selected_equipment]=values_heat_map[index_selected_equipment]
-    plot_heat_map(values_input, values_heat_map, x_labels_list, y_labels_list)
+    plot_heatmap_losses(values_input, values_heat_map, x_labels_list, y_labels_list)
+
+    # plot heatmap of greatest direction
+    _, col005, _ = st.columns((1.15, 3, 1.15))
+    with col005:
+        st.markdown('### Directions with greatest losses of russian personnel, since 2022-04-25')
+    plot_heatmap_direction(df_direction_heatmap, date_last)
 
     # plot bar chart
-    _, col005, _ = st.columns((1, 2, 1))
-    with col005:
-        plot_bar(df_direction)
+    _, col006, _ = st.columns((1, 2, 1))
+    with col006:
+        plot_bar(df_direction_bar)
 
 
 # sources and about part
 with st.container():
-    _, col006, _ = st.columns((2.5, 1, 2.5))
-    with col006:
+    _, col007, _ = st.columns((2.5, 1, 2.5))
+    with col007:
         st.markdown('### Sources & About')
 
-    _, col007, _ = st.columns((1, 2, 1))
-    with col007:
+    _, col008, _ = st.columns((1, 2, 1))
+    with col008:
         st.markdown(
             """
             Dedicated to the Armed Forces of Ukraine!
