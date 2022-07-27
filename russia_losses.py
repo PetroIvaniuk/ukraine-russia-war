@@ -375,7 +375,8 @@ with st.container():
     with col008:
         st.markdown(
             """
-            Dedicated to the Armed Forces of Ukraine!
+            Dedicated to the Armed Forces of Ukraine! 
+            [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
 
             The application is a simple dashboard that describes russian Equipment Losses during the 2022 russian invasion of Ukraine.
             The data includes official information from [Armed Forces of Ukraine](https://www.zsu.gov.ua/en) and
@@ -420,7 +421,7 @@ with st.container():
             [![GitHub followers](https://img.shields.io/github/followers/PetroIvaniuk?style=social)](https://github.com/PetroIvaniuk)
             [![](https://img.shields.io/badge/Linkedin-Connect-informational)](https://www.linkedin.com/in/petro-ivaniuk-68a89432/)
             [![Twitter Follow](https://img.shields.io/twitter/follow/PetroIvanyuk?style=social)](https://twitter.com/PetroIvanyuk)
-
+            [![Made in Ukraine](https://img.shields.io/badge/made_in-ukraine-ffd700.svg?labelColor=0057b7)](https://stand-with-ukraine.pp.ua)
 
             **© Petro Ivaniuk, 2022**
             """)
