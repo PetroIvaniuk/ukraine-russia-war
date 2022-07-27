@@ -1,10 +1,8 @@
-# Ukraine Russia War [![russian Losses Streamlit Application](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/petroivaniuk/ukraine-russia-war/main/russia_losses.py)
+# Ukraine russia War. russian Equipment and Personnel Losses [![russian Losses Streamlit Application](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/petroivaniuk/ukraine-russia-war/main/russia_losses.py)
 
 Dedicated to the Armed Forces of Ukraine! 
 
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner-direct-single.svg)](https://stand-with-ukraine.pp.ua)
-
-
 
 The application is a simple dashboard that describes russian Equipment Losses during the 2022 russian invasion of Ukraine.
 The data includes official information from [Armed Forces of Ukraine](https://www.zsu.gov.ua/en) 
