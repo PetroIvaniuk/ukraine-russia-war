@@ -335,7 +335,7 @@ columns_equipment_list = df_equipment_daily.loc[:, ~df_equipment_daily.columns.i
 
 
 st.set_page_config(page_title='War-Losses', page_icon="🇺🇦", layout="wide")
-st.dataframe(df_sum)
+
 _, col01, _ = st.columns((3.75, 1, 3.75))
 with col01:
     st.markdown(day_last_str)
