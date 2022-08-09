@@ -5,13 +5,14 @@ from dateutil.relativedelta import relativedelta
 
 import pandas as pd
 import numpy as np
+import pydeck as pdk
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 
 
-def preprocess_dataframe_equipment(df):
+def preprocess_df_equipment(df):
     '''
     Preprocess equipment losses dataset
     '''
@@ -38,53 +39,42 @@ def preprocess_dataframe_equipment(df):
     df = df.rename(columns=columns_to_rename)
     return df
 
-def create_dataframe_direction_bar(df, direction_rename_dict):
+def create_df_direction(df, direction_rename_dict):
     '''
-    Creats direction dataset for bar chart
+    Creates dataframe direction
     '''
-    map_direction_oblast = {
-        'Popasna':'Luhansk',
-        'Slobozhanskyi':'Kharkiv',
-        'Kharkiv':'Kharkiv',
-        'Mykolaiv':'Mykolaiv',
-        'Lyman':'Donetsk',
-        'Novopavlivsk':'Kharkiv',
-        'Donetsk':'Donetsk',
-        'Sievierodonetsk':'Luhansk',
-        'Kryvyi Rih':'Dnipropetrovsk',
-        'Izyum':'Kharkiv',
-        'Kurakhove':'Donetsk',
-        'Zaporizhzhia':'Zaporizhzhia',
-        'Kramatorsk':'Donetsk',
-        'Avdiivka':'Donetsk',
-        'Sloviansk':'Donetsk',
-        'Bakhmut':'Donetsk',
-    }
     df = df.copy()
     df['direction'] = df['greatest losses direction'].str.split(',|and')
-    df_direction = df['direction'].explode().str.strip().replace(direction_rename_dict)\
-                                  .value_counts(ascending=True).reset_index()\
-                                  .rename(columns={
-                                    'index':'direction',
-                                    'direction':'occurrence'
-                                    })
-    df_direction['oblast'] = df_direction['direction'].replace(map_direction_oblast)
-    df_direction['direction'] = df_direction['direction'] + '   '
-    df_direction['text_hover'] = df_direction['occurrence'].astype(str) + ' days'
+    df_direction = df[['date', 'direction']].explode('direction')
+    df_direction = df_direction[df_direction['direction'].notna()].copy()
+    df_direction['direction'] = df_direction['direction'].str.strip().replace(direction_rename_dict)
     return df_direction
 
-def create_dataframe_direction_heatmap(df, direction_rename_dict):
+def preprocess_df_direction_amount(df, df_init):
     '''
-    Creats direction dataset for heatmap chart
+    Prepocess dataframe direction for bar plot and map
+    '''
+    columns_to_rename = {
+        'index':'direction',
+        'direction':'direction_count'
+    }
+    df = df.copy()
+    df_direction = df['direction'].value_counts(ascending=True).reset_index()\
+                                  .rename(columns=columns_to_rename)
+    df_result = df_direction.merge(df_init, how='left', left_on='direction', right_on='direction')
+    df_result['direction'] = df_result['direction'] + '   '
+    df_result['text_hover'] = df_result['direction_count'].astype(str) + ' days'
+    df_result['radius'] = df_result['direction_count'].apply(lambda x: (x+25)**2)
+    return df_result
+
+def preprocess_df_direction_pivot(df):
+    '''
+    Prepocess dataframe for heatmap plot
     '''
     df = df.copy()
-    df['direction'] = df['greatest losses direction'].str.split(',|and')
-    df_direction = df[df['direction'].notna()][['date', 'direction']].set_index('date')['direction'].explode()\
-                                                                     .reset_index()
-    df_direction['direction'] = df_direction['direction'].str.strip().replace(direction_rename_dict)
-    df_direction['value'] = 1
-    df_pivot = df_direction.pivot(index='date', columns='direction', values='value').T.copy()
-    return df_pivot
+    df['value'] = 1
+    df_result = df.pivot(index='date', columns='direction', values='value').T.copy()
+    return df_result
 
 def create_dataframe_heatmap(df, columns_list):
     '''
@@ -110,12 +100,12 @@ def create_dataframe_heatmap(df, columns_list):
 
 def plot_bar(df):
     '''
-    Plot bar chart
+    Plot bar chart of directions with greatest personnel losses
     '''
     fig = px.bar(
         df,
         y='direction',
-        x='occurrence',
+        x='direction_count',
         color='oblast',
         color_discrete_sequence=px.colors.qualitative.Prism,
         hover_name='text_hover',
@@ -148,7 +138,7 @@ def plot_bar(df):
         xaxis_showticklabels=False,
         xaxis_visible=False,
         yaxis_title=None,
-        title_text='<b>Directions of personnel losses</b>',
+        # title_text='<b>Directions of personnel losses</b>',
         title_x=0.5,
         font_size=16,
         annotations=annotation_list,
@@ -169,7 +159,7 @@ def plot_heatmap_direction(df, date_last):
         xaxis_title=None,
         coloraxis_showscale=False,
         xaxis_nticks=ticks_number,
-        title_text='<b>Timeline of personnel losses</b>',
+        # title_text='<b>Timeline of greatest losses</b>',
         title_x=0.5,
         font_size=16,
     )
@@ -186,6 +176,42 @@ def plot_heatmap_direction(df, date_last):
         ),
     )
     st.plotly_chart(fig, use_container_width=True)
+
+def plot_map(df):
+    '''
+    Plot map of directions with greatest personnel losses
+    '''
+    layer = pdk.Layer(
+        "ScatterplotLayer",
+        df,
+        pickable=True,
+        opacity=0.8,
+        stroked=True,
+        filled=True,
+        radius_scale=5,
+        radius_min_pixels=1,
+        radius_max_pixels=100,
+        line_width_min_pixels=1,
+        get_position="coordinate_ua",
+        get_radius="radius",
+        get_fill_color=[255, 140, 0],
+        get_line_color=[255, 0, 0],
+    )
+    st.pydeck_chart(pdk.Deck(
+        layers=[layer], 
+        map_style='light',
+        height=600,
+        initial_view_state=pdk.ViewState(
+            latitude=49.4302723, 
+            longitude=32.0533029, 
+            zoom=5.5,
+            min_zoom=4,
+            max_zoom=9,
+            bearing=0, 
+            pitch=0), 
+        tooltip={"text": "{direction} direction: {text_hover}"}
+        )
+    )
 
 def plot_heatmap_losses(values_input, values_heat_map, x_label, y_label):
     '''
@@ -218,7 +244,8 @@ def plot_bar_line_plot(df, df_daily, columns_list, index_selected, date_last):
             text=df_daily[columns_list[index_selected]]
             ), 
         row=1, 
-        col=1)
+        col=1
+        )
     fig.add_trace(
         go.Scatter(x=df['date'], 
         y=df[columns_list[index_selected]], 
@@ -253,13 +280,27 @@ def plot_bar_line_plot(df, df_daily, columns_list, index_selected, date_last):
 
 
 period_last = 7
-
 url1 = 'https://raw.githubusercontent.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset/main/data/russia_losses_equipment.json'
 url2 = 'https://raw.githubusercontent.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset/main/data/russia_losses_personnel.json'
+path_data_geo = 'data/geo_init.json'
+path_page_2 = 'data/page2.txt'
+path_page_3 = 'data/page3.txt'
 
 direction_rename_dict = {
-    'Slobozhanskyi':'Kharkiv'
+    'Slobozhanskyi':'Kharkiv',
+    'Novopavlivsk':'Novopavlivske'
     }
+
+with open(path_data_geo) as f:
+    data_geo = json.load(f)
+
+with open(path_page_2,'r') as f:
+    page_2_contents = f.read()
+
+with open(path_page_3,'r') as f:
+    page_3_contents = f.read()
+
+df_geo = pd.DataFrame.from_dict(data_geo, orient='index')
 
 df_personnel = pd.DataFrame(requests.get(url2).json())
 df_personnel_daily = df_personnel[['date', 'personnel']].copy().set_index('date')
@@ -271,157 +312,121 @@ total_losses_personnel_period = df_personnel_daily.tail(period_last).sum()['pers
 df = pd.DataFrame(requests.get(url1).json())
 df['day'] = df['day'].astype(int)
 
-df_equipment = preprocess_dataframe_equipment(df)
+df_equipment = preprocess_df_equipment(df)
 df_equipment_daily = df_equipment.copy().set_index(['date', 'day'])
 df_equipment_daily = df_equipment_daily.diff().fillna(df_equipment_daily).fillna(0).astype(int).reset_index()
 
-df_direction_bar = create_dataframe_direction_bar(df, direction_rename_dict)
-df_direction_heatmap = create_dataframe_direction_heatmap(df, direction_rename_dict)
+df_direction = create_df_direction(df, direction_rename_dict)
+df_direction_amount = preprocess_df_direction_amount(df_direction, df_geo)
+df_direction_pivot = preprocess_df_direction_pivot(df_direction)
 
-df_sum = df_equipment_daily.loc[:, df_equipment_daily.columns!='day'].sum()
-df_sum_period = df_equipment_daily.loc[:, df_equipment_daily.columns!='day'].tail(period_last).sum()
+df_sum = df_equipment_daily.loc[:, df_equipment_daily.columns!='day'].sum(numeric_only=True)
+df_sum_period = df_equipment_daily.loc[:, df_equipment_daily.columns!='day'].tail(period_last).sum(numeric_only=True)
 total_losses = df_sum.sum()
 total_losses_peroid = df_sum_period.sum()
 
 date_last = df_equipment_daily.iloc[-1]['date'].date()
+date_last_str = '**Last Data Update:** {}.'.format(date_last)
+
 day_last = df_equipment_daily.iloc[-1]['day']
+day_last_str = '#### {} Day of War'.format(day_last)
+
 columns_equipment_list = df_equipment_daily.loc[:, ~df_equipment_daily.columns.isin(['date', 'day'])].columns
 
 
 st.set_page_config(page_title='War-Losses', page_icon="🇺🇦", layout="wide")
+st.dataframe(df_sum)
+_, col01, _ = st.columns((3.75, 1, 3.75))
+with col01:
+    st.markdown(day_last_str)
 
-# metrics part
-with st.container():
-    _, col001, _ = st.columns((1.8, 1.9, 1.8))
-    with col001:
-        st.title('russian Equipment Losses')
+_, col02, _ = st.columns((1.8, 1.9, 1.8))
+with col02:
+    st.title('russian Equipment Losses')
 
-    _, col0020, _ = st.columns((3.75, 1, 3.75))
-    _, col0021, _ = st.columns((1.35, 1, 1.35))
-    _, col0022, _ = st.columns((1.95, 1, 1.95))
+tab1, tab2, tab3 = st.tabs(["Equipment Losses", "Directions with Greatest Losses", "Sources & About"])
 
-    with col0020:
-        st.markdown('#### {} Day of War'.format(day_last))
-    with col0021:
-        st.markdown('#### Total Equipment Losses: {} ⬆{}'.format(total_losses, total_losses_peroid))
-    with col0022:
-        st.markdown('#### The Death Toll: {} ⬆{}'.format(total_losses_personnel, total_losses_personnel_period))
+with tab1:
+    with st.container():
+        _, col1001, _ = st.columns((1.35, 1, 1.35))
+        _, col1002, _ = st.columns((1.95, 1, 1.95))
 
-    _, col101, col102, col103, col104, col105, col106, _ = st.columns((1, 1, 1, 1, 1, 1, 1, 1))
-    _, col107, col108, col109, col110, col111, col112, _ = st.columns((1, 1, 1, 1, 1, 1, 1, 1))
+        with col1001:
+            st.markdown('#### Total Equipment Losses: {} ⬆{}'.format(total_losses, total_losses_peroid))
+        with col1002:
+            st.markdown('#### The Death Toll: {} ⬆{}'.format(total_losses_personnel, total_losses_personnel_period))
 
-    columns_metric = [col101, col102, col103, col104, col105, col106, 
-                      col107, col108, col109, col110, col111, col112,]
+        _, col101, col102, col103, col104, col105, col106, _ = st.columns((1, 1, 1, 1, 1, 1, 1, 1))
+        _, col107, col108, col109, col110, col111, col112, _ = st.columns((1, 1, 1, 1, 1, 1, 1, 1))
 
-    for i, col in enumerate(columns_metric):
-        col.metric(
-            columns_equipment_list[i],
-            int(df_sum[columns_equipment_list[i]]),
-            int(df_sum_period[columns_equipment_list[i]]
-                ))
-    
-    _, col0022, _ = st.columns((4, 1, 4))
-    with col0022:
-        st.markdown('⬆ last week losses')
+        columns_metric = [col101, col102, col103, col104, col105, col106, 
+                          col107, col108, col109, col110, col111, col112,]
 
-    _, col0023, _ = st.columns((3, 1, 3))
-    with col0023:
-        st.markdown(' Data updated on {}'.format(date_last))
+        for i, col in enumerate(columns_metric):
+            col.metric(
+                columns_equipment_list[i],
+                int(df_sum[columns_equipment_list[i]]),
+                int(df_sum_period[columns_equipment_list[i]])
+                )
+        
+        _, col1003, _ = st.columns((4.25, 1, 4.25))
+        with col1003:
+            st.markdown('**Last Week Losses:** ⬆.')
 
-# plots part
-with st.container():
-    _, col003, _ = st.columns((1.5, 1, 1.5))
-    with col003:
-        st.markdown('### Losses by the Equipment Type')
+        _, col1004, _ = st.columns((3, 1, 3))
+        with col1004:
+            st.markdown(date_last_str)
 
-    _, col004, _ = st.columns((1, 2, 1))
-    with col004:
-        index_selected_equipment = st.selectbox(
-            label="Select an Equipment:", 
-            options=range(len(columns_equipment_list)), 
-            format_func=lambda x: columns_equipment_list[x],
-            index=6
-            )
+        _, col1005, _ = st.columns((1.8, 1, 1.8))
+        with col1005:
+            st.markdown('#### Losses by the Equipment Type')
 
-    # plot bar and line charts
-    plot_bar_line_plot(df_equipment, df_equipment_daily, columns_equipment_list, index_selected_equipment, date_last)
+        _, col006, _ = st.columns((1, 2, 1))
+        with col006:
+            index_selected_equipment = st.selectbox(
+                label="Select an Equipment:", 
+                options=range(len(columns_equipment_list)), 
+                format_func=lambda x: columns_equipment_list[x],
+                index=6
+                )
 
-    # plot heatmap of equipment losses
-    df_heat_map, x_labels_list, y_labels_list = create_dataframe_heatmap(df_equipment_daily, columns_equipment_list)
-    values_heat_map = df_heat_map.values
-    values_input = np.zeros(values_heat_map.shape)
-    values_input[index_selected_equipment]=values_heat_map[index_selected_equipment]
-    plot_heatmap_losses(values_input, values_heat_map, x_labels_list, y_labels_list)
+        # plot bar and line charts
+        plot_bar_line_plot(df_equipment, df_equipment_daily, columns_equipment_list, index_selected_equipment, date_last)
 
-    # plot heatmap of greatest direction
-    _, col005, _ = st.columns((1.15, 3, 1.15))
-    with col005:
-        st.markdown('### Directions with greatest losses of russian personnel, since 2022-04-25')
-    plot_heatmap_direction(df_direction_heatmap, date_last)
+        # plot heatmap of equipment losses
+        df_heat_map, x_labels_list, y_labels_list = create_dataframe_heatmap(df_equipment_daily, columns_equipment_list)
+        values_heat_map = df_heat_map.values
+        values_input = np.zeros(values_heat_map.shape)
+        values_input[index_selected_equipment]=values_heat_map[index_selected_equipment]
+        plot_heatmap_losses(values_input, values_heat_map, x_labels_list, y_labels_list)
 
-    # plot bar chart
-    _, col006, _ = st.columns((1, 2, 1))
-    with col006:
-        plot_bar(df_direction_bar)
+with tab2:
+    with st.container():
+        _, col2001, _ = st.columns((1, 2, 1))
+        with col2001:
+            st.markdown('### Directions with Greatest Losses')
+            st.markdown(page_2_contents)
+            st.markdown(date_last_str)
+            st.markdown('### Timeline')
 
+        # plot heatmap of directions with greatest losses
+        plot_heatmap_direction(df_direction_pivot, date_last)
 
-# sources and about part
-with st.container():
-    _, col007, _ = st.columns((2.5, 1, 2.5))
-    with col007:
-        st.markdown('### Sources & About')
+        # plot map of directions with greatest losses
+        _, col2002, _ = st.columns((1, 2, 1))
+        with col2002:
+            col2002.markdown('### Map')
+        plot_map(df_direction_amount)
 
-    _, col008, _ = st.columns((1, 2, 1))
-    with col008:
-        st.markdown(
-            """
-            Dedicated to the Armed Forces of Ukraine! 
-            [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
+        # plot bar chart of directions with greatest losses
+        _, col2003, _ = st.columns((1, 2, 1))
+        with col2003:
+            col2003.markdown('### Days with Greatest Losses Distributions')
+            plot_bar(df_direction_amount)
 
-            The application is a simple dashboard that describes russian Equipment Losses during the 2022 russian invasion of Ukraine.
-            The data includes official information from [Armed Forces of Ukraine](https://www.zsu.gov.ua/en) and
-            [Ministry of Defence of Ukraine](https://www.mil.gov.ua/en/). The data will be updated daily till Ukraine win.
-
-            **Tracking**
-            - Aircrafts
-            - Helicopters
-            - Tanks
-            - Armoured Personnel Carriers
-            - Artillery Systems
-            - Multiple Rocket Launchers
-            - Unmanned Aerial Vehicles
-            - Warships, Boats
-            - Anti-aircraft Warfare Systems
-            - Special Equipment
-            - Cruise Missiles
-            - Vehicle and Fuel Tank
-
-            **Possible Acronyms**
-            - MRL - Multiple Rocket Launcher
-            - APC - Armored Personnel Carrier
-            - SRBM - Short-range Ballistic Missile
-            - POW - Prisoner of War
-            - UAV - Unmanned Aerial Vehicle
-            - RPA - Remotely Piloted Vehicle
-
-            **Data Sources**
-            - [2022 Ukraine Russia War Dataset](https://github.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset) -
-                russia Losses, JSON format on GitHub.
-                [![GitHub Repo stars](https://img.shields.io/github/stars/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset?style=social)](https://github.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset)
-            - [2022 Ukraine Russia War Dataset](https://doi.org/10.34740/KAGGLE/DS/1967621) - russia Losses, CSV format on Kaggle.
-
-            **Data Sources (Additional)**
-            - [2022 Ukraine Russia War, Losses, Oryx + Images](https://www.kaggle.com/datasets/piterfm/2022-ukraine-russia-war-equipment-losses-oryx) -
-                Ukraine and russia Equipment Losses based on Oryx data. The dataset includes images of all losses.
-            - [rassian navi dataset](https://www.kaggle.com/datasets/piterfm/russian-navy) -
-                All Surface Combatants, Submarines, Littoral Warfare Ships, Rescue, and Auxiliary Ships. The dataset includes all warship losses.
-            
-            **Contacts**
-            
-            [![GitHub followers](https://img.shields.io/github/followers/PetroIvaniuk?style=social)](https://github.com/PetroIvaniuk)
-            [![](https://img.shields.io/badge/Linkedin-Connect-informational)](https://www.linkedin.com/in/petro-ivaniuk-68a89432/)
-            [![Twitter Follow](https://img.shields.io/twitter/follow/PetroIvanyuk?style=social)](https://twitter.com/PetroIvanyuk)
-            [![Made in Ukraine](https://img.shields.io/badge/made_in-ukraine-ffd700.svg?labelColor=0057b7)](https://stand-with-ukraine.pp.ua)
-
-            **© Petro Ivaniuk, 2022**
-            """)
+with tab3:
+    with st.container():
+        _, col3001, _ = st.columns((1, 2, 1))
+        with col3001:
+            st.markdown('### Sources & About')
+            st.markdown(page_3_contents)

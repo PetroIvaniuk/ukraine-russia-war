@@ -1,0 +1,22 @@
+The page is devoted to the analysis of the directions/places with the greatest losses of russian personnel 
+and equipment presented from different perspectives.
+
+The collection of data started since the 60th day of war, that is 2022-04-25 
+and is automatically updated daily. Lots of fights are taking place at the war fronts every day.
+Each record contains the directions/places with the greatest losses. 
+
+Records could have multiple inputs that depend on fight losses amounts. 
+For example, the directions Bakhmut and Donetsk were tracked on 2022-08-09. 
+It means that one day before most russian losses were there. 
+Donetsk does not mean the city Donetsk. It could be the road into the city or the countyside around. 
+The same applies for other directions.
+
+All charts are supported by hover texts.
+
+**Timeline chart.** Each stick means a new day.
+
+**Map.** Each circle is located in the closest city to the direction with the greatest losses. 
+Even if the real front may be 50 km or farther away. 
+The circle size depends on the number of days the greatest losses happened.
+
+**Bar chart.** Each color shows a district of Ukraine  (oblast).

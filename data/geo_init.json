@@ -1,0 +1,122 @@
+{
+    "0": {
+        "direction": "Popasna",
+        "oblast": "Luhansk",
+        "coordinate_ua": [
+            38.3777033,
+            48.6322687
+        ]
+    },
+    "1": {
+        "direction": "Mykolaiv",
+        "oblast": "Mykolaiv",
+        "coordinate_ua": [
+            31.9939666,
+            46.9758615
+        ]
+    },
+    "2": {
+        "direction": "Kharkiv",
+        "oblast": "Kharkiv",
+        "coordinate_ua": [
+            36.2310146,
+            49.9923181
+        ]
+    },
+    "3": {
+        "direction": "Lyman",
+        "oblast": "Donetsk",
+        "coordinate_ua": [
+            37.8168012,
+            48.9801314
+        ]
+    },
+    "4": {
+        "direction": "Novopavlivske",
+        "oblast": "Mykolaiv",
+        "coordinate_ua": [
+            32.9033029,
+            47.1353188
+        ]
+    },
+    "5": {
+        "direction": "Sievierodonetsk",
+        "oblast": "Luhansk",
+        "coordinate_ua": [
+            38.4936475,
+            48.9478698
+        ]
+    },
+    "6": {
+        "direction": "Izyum",
+        "oblast": "Kharkiv",
+        "coordinate_ua": [
+            37.2784125,
+            49.1913721
+        ]
+    },
+    "7": {
+        "direction": "Zaporizhzhia",
+        "oblast": "Zaporizhzhia",
+        "coordinate_ua": [
+            35.1182867,
+            47.8507859
+        ]
+    },
+    "8": {
+        "direction": "Kurakhove",
+        "oblast": "Donetsk",
+        "coordinate_ua": [
+            37.2826414,
+            47.9835214
+        ]
+    },
+    "9": {
+        "direction": "Avdiivka",
+        "oblast": "Donetsk",
+        "coordinate_ua": [
+            37.7466719,
+            48.1338824
+        ]
+    },
+    "10": {
+        "direction": "Kramatorsk",
+        "oblast": "Donetsk",
+        "coordinate_ua": [
+            37.5843812,
+            48.7389415
+        ]
+    },
+    "11": {
+        "direction": "Donetsk",
+        "oblast": "Donetsk",
+        "coordinate_ua": [
+            37.8013407,
+            48.0158753
+        ]
+    },
+    "12": {
+        "direction": "Sloviansk",
+        "oblast": "Donetsk",
+        "coordinate_ua": [
+            37.6058241,
+            48.8522691
+        ]
+    },
+    "13": {
+        "direction": "Kryvyi Rih",
+        "oblast": "Dnipropetrovsk",
+        "coordinate_ua": [
+            33.3917703,
+            47.9102734
+        ]
+    },
+    "14": {
+        "direction": "Bakhmut",
+        "oblast": "Donetsk",
+        "coordinate_ua": [
+            38.0020994,
+            48.5894123
+        ]
+    }
+}
