@@ -1,4 +1,6 @@
-# Ukraine russia War. russian Equipment and Personnel Losses [![russian Losses Streamlit Application](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/petroivaniuk/ukraine-russia-war/main/russia_losses.py)
+# Ukraine russia War
+
+# russian Equipment and Personnel Losses [![russian Losses Streamlit Application](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/petroivaniuk/ukraine-russia-war/main/russia_losses.py)
 
 Dedicated to the Armed Forces of Ukraine! 
 
