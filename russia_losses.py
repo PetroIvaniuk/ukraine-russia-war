@@ -229,6 +229,8 @@ def plot_heatmap_losses(values_input, values_heat_map, x_label, y_label):
     fig.update_layout(
         title_text='<b>Weekly Losses</b>',
         title_x=0.5,
+        height=600,
+        font=dict(size=13),
         )
     st.plotly_chart(fig, use_container_width=True)
 
