@@ -1,0 +1,33 @@
+{
+    "period_last": 7,
+    "url": {
+        "personnel":"https://raw.githubusercontent.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset/main/data/russia_losses_personnel.json",
+        "equipment":"https://raw.githubusercontent.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset/main/data/russia_losses_equipment.json",
+        "oryx":"https://raw.githubusercontent.com/PetroIvaniuk/2022-Ukraine-Russia-War-Dataset/main/data/russia_losses_equipment_oryx.json"
+    },
+    "data_geo": "data/geo_init.json",
+    "data_content": {
+        "page_2": "data/page2.txt",
+        "page_3": "data/page3.txt",
+        "page_4": "data/page4.txt"
+   },
+    "rename_columns": {
+        "aircraft": "Aircrafts",
+        "helicopter": "Helicopters",
+        "tank": "Tanks",
+        "APC": "Armoured Personnel Carriers",
+        "field artillery": "Artillery Systems",
+        "MRL": "Multiple Rocket Launchers",
+        "drone": "Unmanned Aerial Vehicles",
+        "naval ship": "Warships, Boats",
+        "anti-aircraft warfare": "Anti-aircraft Warfare Systems",
+        "special equipment": "Special Equipment",
+        "cruise missiles": "Cruise Missiles",
+        "vehicle and fuel tank": "Vehicle and Fuel Tank",
+        "personnel": "Personnel"
+    },
+    "rename_direction":{
+        "Slobozhanskyi":"Kharkiv",
+        "Novopavlivsk":"Novopavlivske"
+    }
+}
