@@ -3,7 +3,7 @@
 #### Version 0.5
 *Release date: September 25, 2022*
 
-- Add equipment models list of which Photo Evidence is available as Eхpander Block
+- Add equipment models list of which photo evidence is available as eхpander block
 - Add personnel losses into daily and weekly losses charts
 - Add 'App Changelog' tab
 - Fix nan's in the timeline chart
@@ -13,23 +13,23 @@
 #### Version 0.4
 *Release date: August 09, 2022*
 
-- Add a timeline and map to analyze and visualize the directions of the greatest losses.
-- Split canvas into logical tabs.
-- Add geo.json with oblast and coordinate data.
-- Add page description txt files.
+- Add a timeline and map to analyze and visualize the directions of the greatest losses
+- Split canvas into logical tabs
+- Add geo.json with oblast and coordinate data
+- Add page description txt files
 
 #### Version 0.3
-Release date: Jyly 24, 2022
+*Release date: Jyly 24, 2022*
 
-- Add a bar plot to analyze and visualize the directions of the greatest losses.
-- Edit 'Sources & About' part.
+- Add a bar plot to analyze and visualize the directions of the greatest losses
+- Edit 'Sources & About' part
 
 #### Version 0.2
 *Release date: July 15, 2022*
 
-- Add a heatmap plot to analyze and visualize Equipment Losses split by week.
-- Rename Equipment Names.
-- Improve code structure.
+- Add a heatmap plot to analyze and visualize Equipment Losses split by week
+- Rename Equipment Names
+- Improve code structure
 
 #### Version 0.1
 *Release date: June 8, 2022*

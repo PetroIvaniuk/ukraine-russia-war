@@ -318,17 +318,18 @@ date_last = df_daily.iloc[-1]['date'].date()
 day_last = df_daily.iloc[-1]['day']
 date_last_str = '**Last Data Update:** {}.'.format(date_last)
 day_last_str = '#### {} Day of War'.format(day_last)
+metric_help_str = '⬆ - Last {} Day Losses'.format(period_last)
 
-columns_losses_list = df_daily.loc[:, ~df_daily.columns.isin(['date', 'day'])].columns
-columns_equipment_list = df_daily.loc[:, ~df_daily.columns.isin(['date', 'day', 'Personnel'])].columns
+columns_losses_list = sorted(df_daily.loc[:, ~df_daily.columns.isin(['date', 'day'])].columns)
+columns_equipment_list = sorted(df_daily.loc[:, ~df_daily.columns.isin(['date', 'day', 'Personnel'])].columns)
 
 st.set_page_config(page_title='War-Losses', page_icon="🇺🇦", layout="wide")
 
-_, col01, _ = st.columns((3.75, 1, 3.75))
+_, col01, _ = st.columns((3.85, 1, 3.85))
 with col01:
     st.markdown(day_last_str)
 
-_, col02, _ = st.columns((2, 1, 2))
+_, col02, _ = st.columns((2.1, 1, 2.1))
 with col02:
     st.title('russian losses')
 
@@ -336,61 +337,74 @@ tab1, tab2, tab3, tab4 = st.tabs(["Losses", "Directions with Greatest Losses", "
 
 with tab1:
     with st.container():
-        _, col1000, _ = st.columns((1.45, 2, 1.45))
-        _, col1001, _ = st.columns((1.35, 1, 1.35))
-        _, col1002, _ = st.columns((1.95, 1, 1.95))
-
+        _, col1000, _ = st.columns((1, 2, 1))
         with col1000:
-            st.markdown('### russian losses during the 2022 invasion of Ukraine')
-        with col1001:
-            st.markdown('#### Total Equipment Losses: {} ⬆{}'.format(total_losses, total_losses_peroid))
-        with col1002:
-            st.markdown('#### The Death Toll: {} ⬆{}'.format(total_losses_personnel, total_losses_period_personnel))
+            st.markdown('### Losses during the 2022 russian invasion of Ukraine')
 
-        _, col101, col102, col103, col104, col105, col106, _ = st.columns((1, 1, 1, 1, 1, 1, 1, 1))
-        _, col107, col108, col109, col110, col111, col112, _ = st.columns((1, 1, 1, 1, 1, 1, 1, 1))
+        _, col113, col114, _ = st.columns((3, 1, 1, 3))
+        with col113:
+            col113.metric(
+                'Total Equipment Losses',
+                int(total_losses),
+                int(total_losses_peroid),
+                help=metric_help_str,
+                )
 
-        columns_metric = [col101, col102, col103, col104, col105, col106, 
-                          col107, col108, col109, col110, col111, col112,]
+        with col114:
+            col114.metric(
+                'The Death Toll',
+                int(total_losses_personnel),
+                int(total_losses_period_personnel),
+                help=metric_help_str,
+                )
+
+        _, col101, col102, col103, col104, _ = st.columns((2, 1, 1, 1, 1, 2))
+        _, col105, col106, col107, col108, _ = st.columns((2, 1, 1, 1, 1, 2))
+        _, col109, col110, col111, col112, _ = st.columns((2, 1, 1, 1, 1, 2))
+
+        columns_metric = [
+            col101, col102, col103, col104, col105, col106,
+            col107, col108, col109, col110, col111, col112,
+        ]
 
         for i, col in enumerate(columns_metric):
             col.metric(
                 columns_equipment_list[i],
                 int(df_sum[columns_equipment_list[i]]),
-                int(df_sum_period[columns_equipment_list[i]])
+                int(df_sum_period[columns_equipment_list[i]]),
+                help=metric_help_str,
                 )
-        
-        _, col1003, _ = st.columns((4.25, 1, 4.25))
-        with col1003:
-            st.markdown('**Last Week Losses:** ⬆.')
 
         _, col1004, _ = st.columns((3, 1, 3))
         with col1004:
             st.markdown(date_last_str)
 
-        _, col1005, _ = st.columns((1.8, 1, 1.8))
+        _, col1005, _ = st.columns((1, 2, 1))
         with col1005:
-            st.markdown('#### Losses by the Equipment Type')
+            st.markdown('#### Losses by Type')
 
-        _, col006, _ = st.columns((1.6, 2, 1.6))
+        _, col006, _ = st.columns((1, 2, 1))
         with col006:
             index_selected_equipment = st.selectbox(
-                label="Select an Equipment:", 
+                label="Select Losses Type:", 
                 options=range(len(columns_losses_list)),
                 format_func=lambda x: columns_losses_list[x],
-                index=6
+                index=10,
                 )
 
         column_selected_equipment = columns_losses_list[index_selected_equipment]
         equipment_model_dict = create_equipment_model_dict(df_equipment_oryx, column_selected_equipment)
 
-        _, col007, _ = st.columns((1.6, 2, 1.6))
+        _, col007, _ = st.columns((1, 2, 1))
         with col007:
-            st.markdown('#### Equipment Models of which Photo Evidence is available')
-            for equipment, equipment_list in equipment_model_dict.items():
-                with st.expander(equipment):
-                    for model in equipment_list:
-                        st.markdown(model)
+            if len(equipment_model_dict)!=0:
+                st.markdown('#### List of {} of which photo evidence is available'.format(column_selected_equipment))
+                for equipment, equipment_list in equipment_model_dict.items():
+                    with st.expander(equipment):
+                        for model in equipment_list:
+                            st.markdown(model)
+            else:
+                st.info('There is no additional information about {}.'.format(column_selected_equipment))
 
         # plot bar and line charts
         plot_bar_line_plot(df, df_daily, column_selected_equipment, date_last)
