@@ -118,5 +118,13 @@
             38.0020994,
             48.5894123
         ]
+    },
+    "15": {
+        "direction": "Kupiansk",
+        "oblast": "Kharkiv",
+        "coordinate_ua": [
+            49.7132963,
+            37.6141992
+        ]
     }
 }
