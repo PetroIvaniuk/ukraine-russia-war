@@ -12,6 +12,11 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 
 
+def convert_data2daily(df):
+    df = df.copy().set_index(['date', 'day'])
+    df = df.diff().fillna(df).fillna(0).astype(int).reset_index()
+    return df
+
 def create_equipment_model_dict(df, column_equipment):
     '''
     Creates equipment-equipment model dictionary
@@ -26,7 +31,7 @@ def initial_preprocessing(df, columns_rename_dict):
     Preprocess inital dataset
     '''
     columns_to_sum = ['military auto', 'fuel tank', 'vehicles and fuel tanks']
-    columns_to_drop = ['mobile SRBM system', 'greatest losses direction', 'personnel*', 'POW']
+    columns_to_drop = ['mobile SRBM system', 'greatest losses direction']
 
     df = df.copy()
     df['date'] = pd.to_datetime(df['date'])
@@ -42,8 +47,12 @@ def create_direction_dataframe(df, direction_rename_dict):
     df = df.copy()
     df['direction'] = df['greatest losses direction'].str.split(',|and')
     df_direction = df[['date', 'direction']].explode('direction')
-    df_direction = df_direction[df_direction['date']>='2022-04-25']
+    df_direction = df_direction[df_direction['date']>='2022-04-25'].copy()
     df_direction['direction'] = df_direction['direction'].str.strip().replace(direction_rename_dict)
+
+    last_date_valid = df_direction[df_direction['direction'].apply(type)==str]['date'].tail(1).iloc[0]
+    df_direction = df_direction[df_direction['date']<=last_date_valid].copy()
+    df_direction['date'] = pd.to_datetime(df_direction['date'])
     return df_direction
 
 def preprocess_direction_amount(df, df_geo):
@@ -72,12 +81,12 @@ def preprocess_direction_pivot(df):
     df_result = df.pivot(index='date', columns='direction', values='value').T.copy()
     return df_result
 
-def create_dataframe_heatmap(df, columns_list):
+def create_weekly_dataframe(df, columns_list):
     '''
     Converts input dataset into dataset ready to use for heatmap chart
     '''
     df_week = df.copy()
-    df_week['week_event'] = df_week['date'].dt.week
+    df_week['week_event'] = df_week['date'].dt.isocalendar().week
     df_week['week_label'] = df_week['date'].dt.to_period('W-SUN').apply(lambda r: r.end_time).dt.strftime('%b')+' '+\
                             df_week['date'].dt.to_period('W-SUN').apply(lambda r: r.end_time).dt.strftime('%d')
 
@@ -94,6 +103,18 @@ def create_dataframe_heatmap(df, columns_list):
 
     return df_output, x_labels_list, y_labels_list
 
+def create_treemap_dataframe(df):
+    '''
+    Converts input dataset ready to use fro treemap chart
+    '''
+    df = df.copy()
+    df['date'] = pd.to_datetime(df['date'])
+    df['year'] = df['date'].dt.year
+    df['month'] = df['date'].dt.month_name()
+    df['week'] = 'week ' + df['date'].dt.isocalendar().week.astype(str)
+    df_group = df.groupby(['year', 'month', 'week'])['personnel'].sum().reset_index()
+    return df_group
+
 def plot_bar(df):
     '''
     Plot bar chart of directions with greatest personnel losses
@@ -108,7 +129,7 @@ def plot_bar(df):
         text_auto=True,
     )
     annotation_list = [
-        dict(font=dict(size=14),
+        dict(font=dict(size=18),
              x=0.01,
              y=1.04,
              showarrow=False,
@@ -117,7 +138,7 @@ def plot_bar(df):
              xanchor='left',
              yref="paper",
              xref="paper"),
-         dict(font=dict(size=14),
+         dict(font=dict(size=18),
              x=0,
              y=1.04,
              showarrow=False,
@@ -134,9 +155,11 @@ def plot_bar(df):
         xaxis_showticklabels=False,
         xaxis_visible=False,
         yaxis_title=None,
-        # title_text='<b>Directions of personnel losses</b>',
-        title_x=0.5,
-        font_size=16,
+        title_text='<b>Places of Greatest Losses</b>',
+        title_x=0.25,
+        title=dict(font=dict(size=24)),
+        font_size=18,
+        yaxis=dict(tickfont=dict(size=16)),
         annotations=annotation_list,
     )
     st.plotly_chart(fig, use_container_width=True)
@@ -155,9 +178,12 @@ def plot_heatmap_direction(df, date_last):
         xaxis_title=None,
         coloraxis_showscale=False,
         xaxis_nticks=ticks_number,
-        # title_text='<b>Timeline of greatest losses</b>',
-        title_x=0.5,
+        title_text='<b>Timeline of Places of Greatest Losses</b>',
+        title_x=0.4,
+        title=dict(font=dict(size=24)),
         font_size=16,
+        yaxis=dict(tickfont=dict(size=16)),
+        xaxis=dict(tickfont=dict(size=14)),
     )
     fig.update_layout(
         xaxis=dict(
@@ -165,6 +191,7 @@ def plot_heatmap_direction(df, date_last):
             rangeselector=dict(
                 buttons=list([
                     dict(count=3, label="last 3 months", step="month", stepmode="backward"),
+                    dict(count=6, label="last 6 months", step="month", stepmode="backward"),
                     dict(label="all time", step="all")
                     ])
             ),
@@ -210,7 +237,7 @@ def plot_map(df):
         )
     )
 
-def plot_heatmap_losses(values_input, values_heat_map, x_label, y_label):
+def plot_heatmap_weekly_losses(values_input, values_heat_map, x_label, y_label, title_label):
     '''
     Plot heatmap chart of equipment losses
     '''
@@ -224,10 +251,13 @@ def plot_heatmap_losses(values_input, values_heat_map, x_label, y_label):
         hoverinfo='text'
         )
     fig.update_layout(
-        title_text='<b>Weekly Losses</b>',
-        title_x=0.5,
-        height=600,
-        font=dict(size=13),
+        title_text='<b>{} Year - Weekly Losses</b>'.format(title_label),
+        title_x=0.4,
+        title=dict(font=dict(size=24)),
+        height=800,
+        font=dict(size=16),
+        yaxis=dict(tickfont=dict(size=18)),
+        xaxis=dict(tickfont=dict(size=18), ticklabelposition='inside'),
         )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -246,9 +276,10 @@ def plot_bar_line_plot(df, df_daily, columns_selected, date_last):
         col=1
         )
     fig.add_trace(
-        go.Scatter(x=df['date'], 
-        y=df[columns_selected],
-        mode='lines+markers'), 
+        go.Scatter(
+            x=df['date'],
+            y=df[columns_selected],
+            mode='lines+markers'),
         row=2, 
         col=1
         )
@@ -278,6 +309,21 @@ def plot_bar_line_plot(df, df_daily, columns_selected, date_last):
     fig.update_xaxes(matches='x')
     st.plotly_chart(fig, use_container_width=True)
 
+def plot_treemap(df):
+    fig = px.treemap(
+        df,
+        path=[px.Constant("Personnel Losses"), 'year', 'month', 'week'],
+        values='personnel',
+        color='personnel',
+        color_continuous_scale='blues',
+        maxdepth=3
+    )
+    fig.update_layout(
+        height=800,
+        margin = dict(t=50, l=25, r=25, b=25)
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
 
 path_config = 'config.json'
 with open(path_config) as f:
@@ -296,32 +342,34 @@ df_geo = pd.DataFrame.from_dict(data_geo, orient='index')
 df_equipment_oryx = pd.DataFrame(requests.get(config['url']['oryx']).json())
 df_personnel = pd.DataFrame(requests.get(config['url']['personnel']).json())
 df_equipment = pd.DataFrame(requests.get(config['url']['equipment']).json())
-df_input = df_equipment.merge(df_personnel, how='left', on=['date', 'day'])
-df = initial_preprocessing(df_input, config['rename_columns'])
 
-df_daily = df.copy().set_index(['date', 'day'])
-df_daily = df_daily.diff().fillna(df_daily).fillna(0).astype(int).reset_index()
+df_equipment_proc = initial_preprocessing(df_equipment, config['rename_columns'])
+df_daily_equipment = convert_data2daily(df_equipment_proc)
+df_daily_personnel = convert_data2daily(df_personnel[['date', 'day', 'personnel']])
 
-df_sum = df_daily.loc[:, df_daily.columns!='day'].sum(numeric_only=True)
-df_sum_period = df_daily.loc[:, df_daily.columns!='day'].tail(period_last).sum(numeric_only=True)
+df_sum = df_daily_equipment.loc[:, df_daily_equipment.columns!='day'].sum(numeric_only=True)
+df_sum_period = df_daily_equipment.loc[:, df_daily_equipment.columns!='day'].tail(period_last).sum(numeric_only=True)
 
-total_losses_personnel = df_sum['Personnel']
-total_losses_period_personnel = df_sum_period['Personnel']
-total_losses = df_sum.sum()-total_losses_personnel
-total_losses_peroid = df_sum_period.sum()-total_losses_period_personnel
+total_losses_personnel = df_personnel['personnel'].tail(1).iloc[0]
+total_losses_personnel_period = total_losses_personnel - df_personnel['personnel'].tail(period_last).iloc[0]
+total_losses = df_sum.sum()
+total_losses_peroid = df_sum_period.sum()
 
-df_direction = create_direction_dataframe(df_input, config['rename_direction'])
+df_direction = create_direction_dataframe(df_equipment, config['rename_direction'])
 df_direction_amount = preprocess_direction_amount(df_direction, df_geo)
 df_direction_pivot = preprocess_direction_pivot(df_direction)
 
-date_last = df_daily.iloc[-1]['date'].date()
-day_last = df_daily.iloc[-1]['day']
+date_last = df_daily_equipment.iloc[-1]['date'].date()
+day_last = df_daily_equipment.iloc[-1]['day']
+date_last_direction = df_direction['date'].tail(1).iloc[0]
+
 date_last_str = '**Last Data Update:** {}.'.format(date_last)
 day_last_str = '#### {} Day of War'.format(day_last)
+date_last_direction_str = '**Last Data Update:** {}.'.format(date_last_direction)
 metric_help_str = '⬆ - Last {} Day Losses'.format(period_last)
 
-columns_losses_list = sorted(df_daily.loc[:, ~df_daily.columns.isin(['date', 'day'])].columns)
-columns_equipment_list = sorted(df_daily.loc[:, ~df_daily.columns.isin(['date', 'day', 'Personnel'])].columns)
+columns_losses_list = sorted(df_daily_equipment.loc[:, ~df_daily_equipment.columns.isin(['date', 'day'])].columns)
+columns_equipment_list = sorted(df_daily_equipment.loc[:, ~df_daily_equipment.columns.isin(['date', 'day', 'Personnel'])].columns)
 
 st.set_page_config(page_title='War-Losses', page_icon="🇺🇦", layout="wide")
 
@@ -333,13 +381,13 @@ _, col02, _ = st.columns((2.1, 1, 2.1))
 with col02:
     st.title('russian losses')
 
-tab1, tab2, tab3, tab4 = st.tabs(["Losses", "Directions with Greatest Losses", "App Changelog", "About"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Equipment", "Personnel", "Directions with Greatest Losses", "App Changelog", "About"])
 
 with tab1:
     with st.container():
         _, col1000, _ = st.columns((1, 2, 1))
         with col1000:
-            st.markdown('### Losses during the 2022 russian invasion of Ukraine')
+            st.markdown('### Equipment Losses during the 2022 russian invasion of Ukraine')
 
         _, col113, col114, _ = st.columns((3, 1, 1, 3))
         with col113:
@@ -354,7 +402,7 @@ with tab1:
             col114.metric(
                 'The Death Toll',
                 int(total_losses_personnel),
-                int(total_losses_period_personnel),
+                int(total_losses_personnel_period),
                 help=metric_help_str,
                 )
 
@@ -383,20 +431,20 @@ with tab1:
         with col1005:
             st.markdown('#### Losses by Type')
 
-        _, col006, _ = st.columns((1, 2, 1))
-        with col006:
+        _, col1006, _ = st.columns((1, 2, 1))
+        with col1006:
             index_selected_equipment = st.selectbox(
                 label="Select Losses Type:", 
                 options=range(len(columns_losses_list)),
                 format_func=lambda x: columns_losses_list[x],
-                index=10,
+                index=9,
                 )
 
         column_selected_equipment = columns_losses_list[index_selected_equipment]
         equipment_model_dict = create_equipment_model_dict(df_equipment_oryx, column_selected_equipment)
 
-        _, col007, _ = st.columns((1, 2, 1))
-        with col007:
+        _, col1007, _ = st.columns((1, 2, 1))
+        with col1007:
             if len(equipment_model_dict)!=0:
                 st.markdown('#### List of {} of which photo evidence is available'.format(column_selected_equipment))
                 for equipment, equipment_list in equipment_model_dict.items():
@@ -407,46 +455,54 @@ with tab1:
                 st.info('There is no additional information about {}.'.format(column_selected_equipment))
 
         # plot bar and line charts
-        plot_bar_line_plot(df, df_daily, column_selected_equipment, date_last)
+        plot_bar_line_plot(df_equipment_proc, df_daily_equipment, column_selected_equipment, date_last)
 
         # plot heatmap of equipment losses
-        df_heat_map, x_labels_list, y_labels_list = create_dataframe_heatmap(df_daily, columns_losses_list)
-        values_heat_map = df_heat_map.values
-        values_input = np.zeros(values_heat_map.shape)
-        values_input[index_selected_equipment]=values_heat_map[index_selected_equipment]
-        plot_heatmap_losses(values_input, values_heat_map, x_labels_list, y_labels_list)
+        years_list = sorted(df_daily_equipment['date'].dt.year.unique())
+        for year in years_list:
+            df_daily_temp = df_daily_equipment[df_daily_equipment['date'].dt.year==year].copy()
+            df_weekly, x_labels_list, y_labels_list = create_weekly_dataframe(df_daily_temp, columns_losses_list)
+
+            values_weekly = df_weekly.values
+            values_input = np.zeros(df_weekly.shape)
+            values_input[index_selected_equipment]=values_weekly[index_selected_equipment]
+            plot_heatmap_weekly_losses(values_input, values_weekly, x_labels_list, y_labels_list, year)
 
 with tab2:
     with st.container():
-        _, col2001, _ = st.columns((1, 2, 1))
-        with col2001:
-            st.markdown(content_dict['page_2'])
-            st.markdown(date_last_str)
-            st.markdown('### Timeline')
+        _, col201, _ = st.columns((1, 2, 1))
+        with col201:
+            st.markdown('### Personnel Losses during the 2022 russian invasion of Ukraine')
 
-        # plot heatmap of directions with greatest losses
-        plot_heatmap_direction(df_direction_pivot, date_last)
-
-        # plot map of directions with greatest losses
-        _, col2002, _ = st.columns((1, 2, 1))
-        with col2002:
-            col2002.markdown('### Map')
-        plot_map(df_direction_amount)
-
-        # plot bar chart of directions with greatest losses
-        _, col2003, _ = st.columns((1, 2, 1))
-        with col2003:
-            col2003.markdown('### Days with Greatest Losses Distributions')
-            plot_bar(df_direction_amount)
+        df_daily_personnel_chart = df_daily_personnel[df_daily_personnel['day']>8].copy()
+        plot_bar_line_plot(df_personnel, df_daily_personnel_chart, 'personnel', date_last)
+        df_daily_personnel_group = create_treemap_dataframe(df_daily_personnel)
+        plot_treemap(df_daily_personnel_group)
 
 with tab3:
     with st.container():
-        _, col3001, _ = st.columns((1, 2, 1))
-        with col3001:
-            st.markdown(content_dict['page_3'])
+        st.markdown('### Directions with Greatest Losses')
+
+        col301, col302= st.columns((1, 1), gap='large')
+        with col301:
+            st.markdown(content_dict['page_2'])
+            st.markdown(date_last_direction_str)
+        with col302:
+            plot_bar(df_direction_amount)
+
+        # plot heatmap of directions with greatest losses
+        plot_heatmap_direction(df_direction_pivot, date_last_direction)
+        # plot map of directions with greatest losses
+        plot_map(df_direction_amount)
 
 with tab4:
     with st.container():
-        _, col4001, _ = st.columns((1, 2, 1))
-        with col4001:
+        _, col401, _ = st.columns((1, 2, 1))
+        with col401:
+            st.markdown(content_dict['page_3'])
+
+with tab5:
+    with st.container():
+        _, col501, _ = st.columns((1, 2, 1))
+        with col501:
             st.markdown(content_dict['page_4'])

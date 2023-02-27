@@ -1,11 +1,20 @@
 ### Application Changelog
 
+#### Version 0.6
+*Release date: February 26, 2023*
+
+- Add `Personnel` tab
+- Add `Treemap` chart of Personnel Losses
+- Split `Heatmap` chart of Equipment Losses into years
+- Add the last existing date in the data as the last one for the timeline chart
+- Other minor and visual fixes
+
 #### Version 0.5
 *Release date: September 25, 2022*
 
 - Add equipment models list of which photo evidence is available as eхpander block
 - Add personnel losses into daily and weekly losses charts
-- Add 'App Changelog' tab
+- Add `App Changelog` tab
 - Fix nan's in the timeline chart
 - Fix circles size in the map
 - Other minor and visual fixes
@@ -15,19 +24,19 @@
 
 - Add a timeline and map to analyze and visualize the directions of the greatest losses
 - Split canvas into logical tabs
-- Add geo.json with oblast and coordinate data
-- Add page description txt files
+- Add `geo.json` with oblast and coordinate data
+- Add page description text files
 
 #### Version 0.3
-*Release date: Jyly 24, 2022*
+*Release date: July 24, 2022*
 
-- Add a bar plot to analyze and visualize the directions of the greatest losses
-- Edit 'Sources & About' part
+- Add a bar cart to analyze and visualize the directions of the greatest losses
+- Edit `Sources & About` part
 
 #### Version 0.2
 *Release date: July 15, 2022*
 
-- Add a heatmap plot to analyze and visualize Equipment Losses split by week
+- Add a heatmap chart to analyze and visualize Equipment Losses split by week
 - Rename Equipment Names
 - Improve code structure
 
