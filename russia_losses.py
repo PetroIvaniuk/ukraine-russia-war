@@ -59,17 +59,12 @@ def preprocess_direction_amount(df, df_geo):
     '''
     Prepocess dataframe direction for bar plot and map
     '''
-    columns_to_rename = {
-        'index': 'direction',
-        'direction': 'direction_count'
-    }
     df = df.copy()
-    df_direction = df['direction'].value_counts(ascending=True).reset_index()\
-                                  .rename(columns=columns_to_rename)
+    df_direction = df['direction'].value_counts(ascending=True).reset_index()
     df_result = df_direction.merge(df_geo, how='left', on='direction')
     df_result['direction'] = df_result['direction'] + '   '
-    df_result['text_hover'] = df_result['direction_count'].astype(str) + ' days'
-    df_result['radius'] = df_result['direction_count'].apply(lambda x: (x/np.pi)**0.5*1000)
+    df_result['text_hover'] = df_result['count'].astype(str) + ' days'
+    df_result['radius'] = df_result['count'].apply(lambda x: (x/np.pi)**0.5*1000)
     return df_result
 
 def preprocess_direction_pivot(df):
@@ -122,7 +117,7 @@ def plot_bar(df):
     fig = px.bar(
         df,
         y='direction',
-        x='direction_count',
+        x='count',
         color='oblast',
         color_discrete_sequence=px.colors.qualitative.Prism,
         hover_name='text_hover',
