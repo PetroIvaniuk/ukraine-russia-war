@@ -1,5 +1,11 @@
 ### Application Changelog
 
+#### Version 0.61
+*Release date: December 26, 2023*
+
+- Fix index in `Heatmap` chart of Equipment Losses
+- Add Submarines into Equipment Losses list
+
 #### Version 0.6
 *Release date: February 26, 2023*
 

@@ -17,14 +17,15 @@
         "tank": "Tanks",
         "APC": "Armoured Personnel Carriers",
         "field artillery": "Artillery Systems",
-        "MRL": "Multiple Rocket Launchers",
-        "drone": "Unmanned Aerial Vehicles",
+        "MRL": "MRL (Multiple Rocket Launchers)",
+        "drone": "UAVs (Unmanned Aerial Vehicles)",
         "naval ship": "Warships, Boats",
         "anti-aircraft warfare": "Anti-aircraft Warfare Systems",
         "special equipment": "Special Equipment",
         "cruise missiles": "Cruise Missiles",
         "vehicle and fuel tank": "Vehicle and Fuel Tank",
-        "personnel": "Personnel"
+        "personnel": "Personnel",
+        "submarines": "Submarines"
     },
     "rename_direction":{
         "Slobozhanskyi":"Kharkiv",

@@ -81,21 +81,18 @@ def create_weekly_dataframe(df, columns_list):
     Converts input dataset into dataset ready to use for heatmap chart
     '''
     df_week = df.copy()
-    df_week['week_event'] = df_week['date'].dt.isocalendar().week
     df_week['week_label'] = df_week['date'].dt.to_period('W-SUN').apply(lambda r: r.end_time).dt.strftime('%b')+' '+\
                             df_week['date'].dt.to_period('W-SUN').apply(lambda r: r.end_time).dt.strftime('%d')
 
-    list_df = []
-    for column in columns_list:
-        df_temp = df_week[[column, 'week_event']].copy()
-        df_temp['name'] = column
-        df_temp_pivot = pd.pivot_table(df_temp, values=column, index='name', columns='week_event', aggfunc=np.sum)
-        list_df.append(df_temp_pivot)
-    df_output = pd.concat(list_df, axis=0)
-
+    unique_labels = df_week['week_label'].unique()
+    week_idx_dict = dict(zip(unique_labels, range(len(unique_labels))))
+    df_week['week_idx'] = df_week['week_label'].replace(week_idx_dict)
     x_labels_list = list(df_week['week_label'].unique())
-    y_labels_list = list(df_output.index)
 
+    df_week = df_week[columns_list+['week_idx']].copy()
+    df_output = df_week.groupby('week_idx').sum('numeric_only').T.copy()
+
+    y_labels_list = list(df_output.index)
     return df_output, x_labels_list, y_labels_list
 
 def create_treemap_dataframe(df):

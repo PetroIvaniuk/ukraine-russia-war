@@ -20,6 +20,7 @@ The data includes official [Armed Forces of Ukraine](https://www.zsu.gov.ua/en) 
 - Special Equipment
 - Cruise Missiles
 - Vehicle and Fuel Tank
+- Submarines
 
 **Possible Acronyms**
 - MRL - Multiple Rocket Launcher
@@ -36,10 +37,9 @@ The data includes official [Armed Forces of Ukraine](https://www.zsu.gov.ua/en) 
 - [2022 Ukraine Russia War Dataset](https://doi.org/10.34740/KAGGLE/DS/1967621) - russia Losses, CSV format on Kaggle.
 
 **Data Sources (Additional)**
-- [2022 Ukraine Russia War, Losses, Oryx + Images](https://www.kaggle.com/datasets/piterfm/2022-ukraine-russia-war-equipment-losses-oryx) -
-    Ukraine and russia Equipment Losses based on Oryx data. The dataset includes images of all losses.
-- [rassian navi dataset](https://www.kaggle.com/datasets/piterfm/russian-navy) -
-    All Surface Combatants, Submarines, Littoral Warfare Ships, Rescue, and Auxiliary Ships. The dataset includes all warship losses.
+- [Massive Missile Attacks on Ukraine](https://www.kaggle.com/datasets/piterfm/massive-missile-attacks-on-ukraine) - launched and shot down missiles and drones during russian massive missile and drone (UAV) strikes on infrastructure as part of its invasion of Ukraine.
+- [2022 Ukraine Russia War, Losses, Oryx + Images](https://www.kaggle.com/datasets/piterfm/2022-ukraine-russia-war-equipment-losses-oryx) - Ukraine and russia Equipment Losses based on Oryx data. The dataset includes images of all losses.
+- [rassian navi dataset](https://www.kaggle.com/datasets/piterfm/russian-navy) - All Surface Combatants, Submarines, Littoral Warfare Ships, Rescue, and Auxiliary Ships. The dataset includes all warship losses.
 
 **Contacts**
 
