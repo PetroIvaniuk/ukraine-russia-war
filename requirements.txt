@@ -3,3 +3,4 @@ plotly==5.13.1
 pydeck==0.8.0
 pandas==2.0.1
 numpy==1.24.2
+altair<5
